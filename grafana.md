@@ -2064,3 +2064,315 @@ Good Luck...
 
 Demo: *https://gitee.com/wt123/grafana*
 
+# 十、创建第一个 Table 表格面板
+
+##  10.1. 管理 Dashboard
+
+**(1)**. 进入 Dashboard 管理界面
+
+![img](grafana.assets/grafana-dashboard-management.jpeg)
+
+**(2)**. 创建 **界面/Dashboard**。 在界面内， 可以创建各种类型的 **面板/Panel**。
+
+**(3)**. 创建 **目录/Folder**。 通过目录对界面进行分类管理。 a. 在界面初次创建时 **保存** 选择目录。 b. 在管理界面 **选中并移动** 调整已保存的界面
+
+**(4)**. 导入共享的界面。 a. 可以在 [Grafana Dashboard 市场](https://grafana.com/grafana/dashboards/) 选择已存在的界面并通过 **ID** 导入。 b. 或者通过上传 `json` 文件导入。
+
+## 10.2. 创建 Panel/面板
+
+点击右上角 **(1)** 的图表创建 **面板**， 选择 **(2)** 新面板。
+
+![img](grafana.assets/grafana-create-panel.jpeg)
+
+创建之后， 可以看到面板的完整界面
+
+1. **(1)** 是面板的展示界面， 根据我们的配置展示数据。
+2. 在 **Query/查询** 控制台中， 通过 **(2)** 选择之前配置的数据源。
+3. 在 **(3)** 中， 通过 **查询语句** 从数据源中捞出数据。 **不同的数据源类型对应自己各自的语法**。
+4. 在 **(4)** 中， 是针对查询进行额外的 **展示侧** 配置， 例如展示名字和方法。
+5. 在 **(5)** 中， 则是对展示面板的高级配置。 包括面板名字、 面板类型、 字段展示效果等。
+
+![img](grafana.assets/grafana-panel.jpeg)
+
+在上图中， 我们通过查询 Promethues 展示了在 kube-system 中的 metric 服务的存活状态。
+
+```
+up{namespace="kube-system",job="_arms/kubelet/metric"}
+```
+
+上面这段就是 [Prometheus 的基础语法: PromeQL](https://prometheus.io/docs/prometheus/latest/querying/basics/) ， 后面待着看原文的时候会展开说。
+
+## 10.3. 配置表格面板
+
+我们这次的目的是要创建一个 **表格/Table** 类型的面板。
+
+1. 在右上角选择面板类型， **(1)** 选择 **Table**
+2. 修改左下 Query 面板中， **(2)** 将 `Format` 修改为 `Table`, **(3)** `Type` 修改为 `Instant`
+3. 在面板的展示区， 将以表格形式出现。 点击 **(4)** 刷新按钮， 立即更新查询内容。 **尤其是在每次修改后， 都建议点一下**。
+4. 在右边 **(5)** `All` 配置区， 可以配置界面的基本信息。
+5. 在右边 **(6)** `Overrides` 配置区， 针对表格字段进行 **高级配置**。
+
+![img](grafana.assets/grafana-panel-table.jpeg)
+
+## 10.4. 字段高级配置
+
+在上面界面中有很多字段， 并不是每个字段都是我们需要的， 类似 Value 字段意义也不明确。
+
+进入 **(6)** `Overrides`， 进行进一步的调整
+
+### 4.1. 字段筛选
+
+进行字段的展示筛选， 有两种方法。 就个人而言， 更喜欢白名单方法。
+
+1. 白名单方法： 即 **(1)** 隐藏所有字段， **(2)** 在展示需要字段。
+2. 黑名单方法： 即 **直接** 隐藏不需要的字段。
+
+![img](grafana.assets/grafana-hidden-fields-whitelist.jpeg)
+
+注意: **(1-2)** 使用的是 **正则模式** 选择字段。 **(3)** 是使用的 **字段名称** 精确匹配。
+
+1. 点击 `Add field override` 进行字段匹配。
+2. 点击 `Add override property` 进行字段的属性配置。
+
+### 4.2. 字段语义化 - 更明确的展示
+
+可以看到， 在上图 Value 的值是 1 或者 0。 这个值并不能 **直观的** 表示服务状态。 因此我们对字段进行进一步扩展。
+
+点击 `Add override property`，
+
+1. 选择 `value mapping` 值映射属性。
+2. 选择 `Cell display mode` 选择单元格展示模式。
+3. 选择 `Column width` 选择单元格宽度。
+
+![img](grafana.assets/value-mapping.jpeg)
+
+可以看到， 一个字段上添加多个属性。
+
+## 10.5. 结果展示
+
+可以看到，根据我们的调整， 针对服务的观察就更方便。
+
+![img](grafana.assets/grafana-table-result.jpeg)
+
+# 十一、变量的创建、管理与使用
+
+建议点击 **查看原文** 查看最新内容。
+
+> **原文链接:** https://typonotes.com/posts/2023/06/08/grafana-variable-management/
+
+之前在 [Grafana: (1) DataSource 数据源管理](https://typonotes.com/posts/2023/06/06/grafana-datasurce-management/) 中提到过， 对于不同环境的的数据源命名是具有一定规则， 可以在后期通过变量管理。
+
+这个需求其实很好理解：
+
+1. **不同的团队** 对定制的监控界面有各自的需求， 大部分情况下 **不能混用** 。
+2. 而某个团队的 **不同环境** 的界面 **又需要一致**， 这样使用起来没有额外学习成本。
+
+在面板中 **引入变量**， 能快速切换不同环境， 还能对更好的过滤查询条件。 这点很容易理解。
+
+![img](grafana.assets/grafana-variable-panel.jpeg)
+
+## 11.1. Grafana 变量
+
+Grafana 给出了 [9种内置变量类型](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/) , 个人比较常用的有一下几种
+
+1. Global Variables: 内置全局变量
+2. Data Source: 数据源
+3. Query: 查询
+4. Interval: 间隔
+5. Ad hoc filters: 条件过滤
+
+## 11.2. Grafana 变量配置
+
+在 Dashboard **右上角** 点击 **齿轮/Dashboard Setting** 进入配置界面， 选择 **变量/Variables**。
+
+点击 `Add Variable` 或者 `New` 创建变量
+
+![img](grafana.assets/variable-datasource.jpeg)
+
+可以认为分为 **三个区** 或者 **四个区（按名字）**
+
+1. **红区**： 对变量的定义， 描述
+2. **黄区**： 对于变量的过滤或补充。 不同类型的变量这部分不同。
+3. **绿区**： 结果预览。
+
+重点说一下 **红区**
+
+1. Name: 变量名称。 一定要用有 **语义** 的 **单词或词组**， 方便后期使用和展示。
+2. Label: Dashboard 上的显示名称， 如果为空则显示 Name。 这部分我通常不写。 变量名已经有了明确的意思， 直接用变量名更方便。
+3. Description: 变量描述。 这部分类似注释， 可以多写一些提示性语句。
+4. Type: [变量类型](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/) 。
+5. Hide: 是否隐藏。 一些 **不需要用户控制** 的变量就可以隐藏。 后面会有一个案例说明。
+
+### 2.1. DataSource数据源 变量
+
+我们创建一个 **数据源变量**。 直接看图， 很直观了。
+
+![img](grafana.assets/variable-datasource-20230705142253346.jpeg)
+
+实际上， 在没有过滤之前， 我拥有 **十多个** Prometheus 的变量。
+
+### 2.2. Query/查询 变量
+
+Query 变量应该是用的 **最多** 的变量之一了。
+
+![img](grafana.assets/variable-query.jpeg)
+
+1. `Type` 选择 `Query`。 通过查询获得结果。
+2. 还需选择 `DataSource`， 不同的 **数据源类型** 语句对应的查询语句的语法肯定是不一样的， 这个很好理解。 这里我们选择刚才创建的变量 `${MyCluster}`。
+3. 变量的 `Refresh` 刷新时机。 是 **加载面板** 或者 **时间范围变化** 触发， 根据各自的情况选择。
+4. 过滤依旧是 `Regex`， 使用的 [Google/re2](https://github.com/google/re2/wiki/Syntax) 的正则表达语法。
+5. `Sort` 排序通常选 **Alphabetical(asc)** ， 依据字母表顺序排列。
+
+### 2.3. `label_values` 和 `query_result`
+
+需要重点强调一下的是 `label_values` 和 `query_result` 都是 Grafana 针对 Prometheus 的语法， [Prometheus template variables](https://grafana.com/docs/grafana/latest/datasources/prometheus/template-variables/) ， 只能在 Grafana 上使用。
+
+这两个 **方法/函数** 都可以通过 Grafana 在 Prometheus 进行数据查询， 并返回数据。 但是一些差异。
+
+#### label_values
+
+这里有一个很重要的 **方法/函数**: `label_values`， 可以提取一个 **标签**。
+
+语法很简单
+
+```
+label_values( 向量, 标签名)
+```
+
+例如上图中我们使用的条件， 以获取 namespace 的值
+
+| `1 ` | `label_values( up{}, namespace )  # 查询 up, 提取 namespace 标签 ` |
+| ---- | ------------------------------------------------------------ |
+|      |                                                              |
+
+在向量中， 查询条件是可以 **扩展** 的， 也是可以使用 **变量** 的。 例如这里通过提出 job 的值的时候， 使用了变量 namespace 的值。
+
+| `1 ` | `label_values( up{namespace="$namespace"}, job) # 带有 up, 提取 job 标签 ` |
+| ---- | ------------------------------------------------------------ |
+|      |                                                              |
+
+这应该可以算作 [**Chained Variable/链接变量**](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#chained-variables) ， 理论上是 **无限** 嵌套的， 但最好这种变量查询 **不要超过 5-10 层**（主要还是看每次查询的数据量）。
+
+#### query_result
+
+关于 `query_result` 我还没搞清楚到底要怎么用， 以及用在什么地方。
+
+按照官方的说法： `label_vaules` 不支持查询， 因此可以使用 `query_result` 查询结果， 并通过 **正则** 过滤。
+
+```
+query_result(topk(5, sum(rate(up[1m])) by (instance)))
+```
+
+官方在这里有一个案例 [Use interval and range variables](https://grafana.com/docs/grafana/latest/datasources/prometheus/template-variables/#use-interval-and-range-variables) ， 有兴趣可以自己了解一下。
+
+### 2.4. 变量的依赖关系
+
+话说回来， 所有变量创建完成之后， 可以在 **变量管理** 界面， 点击右上角的 **Show Dependencies** 查看变量之间的以来关系。
+
+![img](grafana.assets/variables-dependencies.jpeg)
+
+### 2.5. 使用变量
+
+使用变量很简单， 将变量替换在对应的地方就可以了。
+
+这是替换后
+
+![img](grafana.assets/panel-after.jpeg)
+
+这是替换前
+
+![img](grafana.assets/panel-before.jpeg)
+
+## 3. 变量的语法
+
+这里说说变量的基础语法。
+
+1. `$variable` 这是最基本的用法。
+2. `${variable}` 可以使用这种方式将变量包裹起来。 通常用于有歧义表达式。 例如 `${variable}_1` 与 `$variable_1` 就是两个完全不同的含义。 这个点 Shell 类似。
+3. `${variable:<format>}` 可以变量进行不同类型的格式化。 要注意 **格式化** 的方法是 Grafana 提供并限制了的。
+
+可以点击链接到官网， 查看其他 [更高级变量的语法](https://grafana.com/docs/grafana/latest/dashboards/variables/variable-syntax/) 。
+
+
+
+# 十二、使用外联表格(Outer Join Table) 展示多个查询结果
+
+建议点击 **查看原文** 查看最新内容。
+
+> **原文链接:** https://typonotes.com/posts/2023/06/16/grafana-outer-join-table/
+
+在使用 Grafana 的时候， 通常会希望将 **多个查询结果** 展示到 **同一个的表格** 上。
+
+这个时候， 就需要使用到 **外联表格**。
+
+我们现在需要一个表格， 展示 Pod 的的状态， 包括 CPU 的 **当前、 Request、 Limit**
+
+## 12.1 查询的合并
+
+```
+# 当前用量
+container_cpu_usage_seconds_total{pod=~"node-exporter-.*"}
+
+# request
+kube_pod_container_resource_requests_cpu_cores{pod=~"node-exporter-.*"}
+
+# limit
+kube_pod_container_resource_limits_cpu_cores{pod=~"node-exporter-.*"}
+
+```
+
+
+
+可以看到， 多个查询以 **字母** 区分 （A，B，C）
+
+![img](grafana.assets/grafana-multiple-query.jpeg)
+
+在没进行展示优化钱， grafana 会按照查询 **独立展示** 表格内容。 用户需要在下拉菜单中选择对应的查询展示。
+
+![img](grafana.assets/grafana-multiple-query-table-20230705142714852.jpeg)
+
+## 12.2 外联表格
+
+通过 **相同字段** 进行 **外联**。 这里选择 pod
+
+1. 在查询 **Query** 标签旁有 **Transform** 的标签， 用于对表格进行高级处理（变形）。
+2. 在 Transform 中搜索 **Outer Join** 外联选型。
+3. 在 Outer Join 中， 为 Field name 选择 **外联字段**。 我们这里选择 pod， 因为 pod 名是唯一且相同的。
+
+![img](grafana.assets/grafana-multiple-query-table.jpeg)
+
+1. 在展示界面， 可以看到其他 **冲突** 字段已经自动命名了 **数字后缀** 用与区分， 例如 `namespace 1`
+2. 对应的， **值字段** 字段名根据查询条件对应并区分， `Value #A`
+
+![img](grafana.assets/grafana-join-table.jpeg)
+
+## 12.3 优化外联表格
+
+优化外联表格展示， 也在 **Transform** 标签中选择属性。
+
+1. 进入到 **Transform** 标签
+2. 选择属性 **Organize fields**
+3. 隐藏所有字段， 显示需要字段。 这里为 `namespace, pod, Value #A-C`
+4. 将字段名称添加 **具有字面意义/阅读性好** 的名称。
+
+![img](grafana.assets/grafana-transform-organize-fileds.jpeg)
+
+在调整完成后， 可以看到表格和之前对比，已经非常简洁清爽了。
+
+![img](grafana.assets/grafana-transform-organize-fileds-table.jpeg)
+
+## 12.4 使用 Overrides 优化字段
+
+虽然我们使用了 **Transform** 进行表格优化， 同样的也可以使用 **Overrides** 对字段进行二次优化。
+
+这里就不多说了， 在之前 [Grafana: (2) 创建第一个 Table 表格面板](https://typonotes.com/posts/2023/06/06/grafana-create-1st-table-panel/) 时已经做过详细阐述。
+
+这里主要提一下， 使用 Overrides 的时候， 会多刚才我们在 Transform 下 Organize Table 时的 **自定义字段名称**。
+
+![img](grafana.assets/grafana-fields-overrides.jpeg)
+
+1. 使用 **字段名义名称** 进行选中， 意味着与查询条件的位置进行 **解耦** 了。
+2. 相对的， **自定义名称** 也不能在随意更改了。
+
+
+
